@@ -85,9 +85,13 @@ perl e-finder -df <file> -i <file> -s|-e <decimal>  <optional parameters>
 -v|version        		: display program’s version.
 ```
 
-# User manual
+## Tutorial
+Follow the instructions in the e-Finder manual file to learn how to use e-Finder program and interpret the results.
 
-# Tutorial
+## Reference
+If you use this program for your publication, please cite:
 
-# Contact
+e-Finder program (developed by Liliane S. Oliveira and Arthur Gruber, University of São Paulo, Brazil, unpublished).
+
+## Contact
 To report bugs, to ask for help and to give any feedback, please contact Arthur Gruber (argruber@usp.br) or Liliane S. Oliveira (liliane.sntn@gmail.com).
