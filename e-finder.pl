@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-# e-finder.pl v.1.0 (2020-12-11) - A tool to find multigene elements in assembled sequences using profile HMMs
+# e-finder.pl v.1.0 (2021-01-25) - A tool to find multigene elements in assembled 
+# sequences using profile HMMs
 
 use strict;
 use warnings;
@@ -9,10 +10,11 @@ use File::Basename;
 use Cwd 'abs_path';
 use Scalar::Util qw(looks_like_number);
 
-#variables
+# variables
+
 my $output = 'output_dir';
 my $version = "1.0";
-my $last_update = "2020-12-11";
+my $last_update = "2021-01-25";
 my $help;
 my $transeq_file;
 my $fasta_qual;
@@ -43,12 +45,13 @@ my $script_command = $0;
 my $ignore_genomes;
 
 
-# Capture the commands given to Tabajara in the command line
+# Capture the commands given to e-Finder in the command line
 foreach (@ARGV) {
     $script_command .= /\s/ ?   " \"" . $_ . "\""
                     :           " "   . $_;
 }
  
+# Define the genetic code to be used
 my %number_codes = (
 		    '0' => '0',
                     'standard' => '1',
@@ -111,6 +114,7 @@ my %number_codes = (
                     'thraustochytrium mitochondrial' => '23',
                     '23' => '23');
 
+# Define start codons of each genetic code
 my %start_codon = (
 		   '0' => 'ATG',
                    '1' => '(ATG|CTG|TTG)',
@@ -130,6 +134,7 @@ my %start_codon = (
                    '22' => 'ATG',
                    '23' => '(ATT|ATG|GTG)');
 
+# Defines possible stop codons for each genetic code
 my %end_codon = (  '0' => '(TAA|TAG|TGA)',
                    '1' => '(TAA|TAG|TGA)',
                    '2' => '(TAA|TAG|AGA|AGG)',
@@ -176,7 +181,7 @@ my %letters = ('1' => 'a',
                '26' => 'z'	
 	      );
 
-my $help_print = "##### e-finder - version $version ($last_update) - L. Oliveira & A. Gruber #####
+my $help_print = "##### e-Finder - version $version ($last_update) - L. Oliveira & A. Gruber #####
 
 Usage:
 e-finder.pl -df <file> -i <file> -s|-e <decimal>  <optional parameters>
@@ -280,9 +285,7 @@ if($version_op){
     die "Version $version.\nLast update: $last_update\n";
 }
 
-#
-# if configuration file is not defined, check if the mandatory arguments are defined (seed file and dataset file)
-#
+# If configuration file is not specified, check if the mandatory arguments are defined 
 if (not defined $conf) {
     if(!$input_file and !$input_dir){
     	die "ERROR: Missing mandatory argument -df|dataset_file or -dd|dataset_dir.\n$help_print\n";
@@ -301,6 +304,7 @@ if (not defined $conf) {
     }
 }
 
+# If configuration file is specified, check if all mandatory arguments are defined
 if ($conf) {
     print STDERR "Configuration file specified, command line options will be overridden.\n";
 
@@ -323,9 +327,7 @@ if ($conf) {
     }
     close(CONFIG);
 
-    #
-    # if configuration file is defined, check if the mandatory arguments are defined (seed file and database file)
-    #
+    # Mandatory arguments
     my $missingArgument = 0;
 
     if (!$config{"i"} and !$config{"input_file"}) {
@@ -364,17 +366,11 @@ if ($conf) {
 	
     }
 
-    #
-    # Mandatory arguments
-    #    
-    if ($missingArgument) {
+        if ($missingArgument) {
         die "\nERROR: Cannot run e-finder.pl, mandatory configuration argument(s) missing (see bellow).\n\n$help_print\n";
     }
 
-    #
     # Optional parameters
-    #
-
     if (((defined($config{"e"}) or defined($config{"e-value"}))) and ((defined($config{"s"}) or (defined($config{"score"}))))){
 	die "ERROR: Please use -s|score or -e|e-value, not both.\n$help_print\n";	
     }
@@ -532,7 +528,6 @@ my $transeq_name;
 my %hmms_score = ();
 
 my @aux_print = split(" ",$script_command);
-$script_command =~ s/$aux_print[0]/e-finder_1.31.pl/;
 
 if($element_distance < $dist){
     $element_distance = $dist;
@@ -551,7 +546,7 @@ if(defined $ignore_genomes){
 my $selected_dir;
 my $discarded_dir;
 
-# If the input is a fasta file 
+# If the input is a FASTA file 
 if($input_file){
     my $len = length($input_file);
     my $dir = undef;
@@ -564,6 +559,7 @@ if($input_file){
     my $aux;
     my $resp = 0;
     my $hmmsearch_tabular_file;
+    # Verify if the input file exists
     if(!-e $input_file){
 	die "Database file $input_file not found!\n";
     }
@@ -571,6 +567,7 @@ if($input_file){
 	if(!-e $output){
     	    system "mkdir $output";
 	}
+	# Create the output directory
 	my $all_results_dir = $output."/all_results";
 	if(!-e $all_results_dir){
 	    system "mkdir $all_results_dir";
@@ -579,6 +576,8 @@ if($input_file){
 	$run_dir = output_dir_name($run_dir);		
 	system "mkdir $run_dir";	
 	$file_log = $run_dir."/".$file_log;
+
+	# Print the execution parameters in the logfile
 	open(LOG, ">$file_log") or die "ERROR: Could not create log file $file_log : $!\n";
 	print LOG "Command line:\n$script_command\n\n";
 	print LOG "Parameters: \n\n";
@@ -600,6 +599,8 @@ if($input_file){
 	print LOG "-sf size filter: $size_filter\n";
         print LOG "-ed element_distance: $element_distance\n";
 	my %pls = ();
+
+	# Check if a file containing the genome description is provided
 	if(defined $patric_list){
 	    print LOG "-pl patric list: $patric_list";
 	    if(defined $patric_list){
@@ -607,7 +608,8 @@ if($input_file){
         	    print "Warning:File $patric_list not found. The final report will be generate without Organism name\n";
     		}
     		else{
-        	    open(FILE, $patric_list);
+		    # Store genome information in memory
+        	    open(FILE, $patric_list); 
         	    while(<FILE>){
             	    	chomp($_);
             	    	if($_ =~ /genome_id	genome_name	taxon_id	genome_length/){			
@@ -630,6 +632,8 @@ if($input_file){
 	    print LOG "-pl patric list: Patric-like list file not provided\n";
 	}
 	print LOG "\nDataset analysis:\n";
+
+	# Check if the provided file is a FASTA file
 	my $ext = verify_file_type($input_file);
 	if($ext != 1){
 	    close(LOG);
@@ -637,19 +641,23 @@ if($input_file){
 	    die "File $input_file is not a fasta file! Aborting...\n";	
 	}
 	if($ext == 1){
-
+	    
+	    # Check the content of the provided FASTA file (1 - nucleotide; 2 - amino acid)
             my $type = verifiesFastaFile($input_file);
-	    if($type == 1){ #DNA fasta file - verify if transeq file exists
+	    if($type == 1){ # DNA fasta file - verify if transeq file exists
 	    	print LOG "Type: Nucleotide Fasta\n";
 		my $msg;
+		
+		# Run transeq program
                 ($transeq_name, $msg) = runTranseq($file_name, $input_file, $dir);
                 print LOG $msg;
      	    }
-    	    else{# Protein fasta file
+    	    else{# Protein FASTA file
 	    	print LOG "Type: Protein Fasta\n";
 	    	$transeq_name = $input_file;	    
     	    }	
-	    # put the genomes in a hash
+
+	    # Store the genomes in memory
 	    open(FILE, $input_file);
 	    my $seq = "";
 	    my $name = undef;
@@ -672,6 +680,8 @@ if($input_file){
 	    close(FILE);
 	    $genomes{$name} = $seq;
 	    my $prefix_dir;
+
+	    # Perform similarity searches for each provided profile HMM
 	    foreach my $hmm (@hmms_db){
 	    	%hmms_score = ();
 	    	my $len = length($hmm);
@@ -682,17 +692,23 @@ if($input_file){
 	    	     system "mkdir $dir";
 	    	}
 		my $msg;
+
+		# Check if a cutoff score must be used in similarity searches
 	    	($resp, $msg) = verifyScoreEvalue($hmm, $dir);
 		print LOG $msg;
 	    	my $aux = $dir."/". $file_name;		
 		if(!-e $transeq_name){
 		    next;
 		} 
+		
+		# Run hmmsearch program
 	    	($hmmsearch_tabular_file, $msg) = runHmmsearch($aux, $transeq_name, $resp, $hmm, $dir);
 		print LOG $msg;
 		if($hmmsearch_tabular_file eq "-1"){
 		    next;
 		}
+
+		# Save similarity searches results in a file
 	    	print "Analysing hmmsearch results...\n";
                 my $str_table1 = analyseHmmsearchResults($hmmsearch_tabular_file, $resp);
 	    	if(!$str_table1 eq ""){
@@ -707,6 +723,8 @@ if($input_file){
 		    system "rm -rf $aux_hmms_dir";
 		}
 	    }
+
+	    # Analysis of the similarity searches results obtained by all profile HMMs
 	    print LOG "\nResults: \n\n";
     	    opendir(DIR, "$all_results_dir");
 	    my $abs = abs_path($all_results_dir);
@@ -736,9 +754,17 @@ if($input_file){
             my $str_report = "";
 	    my %markers;
 	    my %general_markers = ();
+
+	    # Check if the results found for each input sequence meet the criteria chosen in
+	    # the user-defined parameters 
+	    
 	    foreach my $key (sort keys %contigs){
 	    	my @coord = ();
 	    	my $amount = scalar(@{$contigs{$key}});
+	    	
+		# Check if the number of genes is equal to or larger than the minimum number 
+		# defined by the user 
+		
 	    	if($amount >= $minimum_amount){
 		    my $dir = $selected_dir."/".$key;
 		    my $disc = $discarded_dir."/".$key;
@@ -755,6 +781,8 @@ if($input_file){
 		    print FILE ">$key\n$genomes{$key}\n";
 		    close(FILE); 
 		    %markers = ();
+
+		    # Map the genes found in the original sequence to obtain their coordinates
 		    for (my $i = 0; $i < scalar(@contend_marker); ++$i){
 		    	my @aux_marker = split("_", $contigs{$key}[$i]);
 		    	my $marker = $aux_marker[0];
@@ -819,6 +847,9 @@ if($input_file){
                     }
 		    my $index = 1;
 		    my $prev_element = -1;
+
+		    # Check if the gene order and orientation meet the criteria defined in the 
+		    # parameters
 		    for(my $i = 0; $i < scalar(@possible_proteins) - 1; ++$i){
                     	my @aux = split("\t", $possible_proteins[$i]);
                         my @aux2 = split("\t", $possible_proteins[$i+1]);
@@ -908,7 +939,8 @@ if($input_file){
                         $str_report .= $str;
                     }		    
 	    	}
-		else{
+		else{ # The minimum number of genes was not found in the sequence. The results 
+		# will be stored in a specific directory.
 		    my @contend_marker = @{$content{$key}};
 		    my $markers_str = "";
 		    for (my $i = 0; $i < scalar(@contend_marker); ++$i){
@@ -987,6 +1019,8 @@ if($input_file){
 		    }
 		}
 	    }
+
+	    # Generate the final files containing the positive sequences
 	    if(defined $patric_list){
 		print FINAL "ContigID_elem#\tOrganism name\tContig size\tElement coord. on contig\tElement size\t";
 	    }
@@ -1105,8 +1139,9 @@ if($input_file){
     	}
     }
 }
+# If the input is a directory
 elsif($input_dir){
-    if(!-e $input_dir){
+    if(!-e $input_dir){ # Check if the provided directory exists
         die "Database directory $input_file not found!\n";
     }    
     elsif(!-d $input_dir){
@@ -1118,6 +1153,8 @@ elsif($input_dir){
             my $l = length($output);
             $output = substr $output, 0, ($l-1);
         }
+
+	# Create the output directory
 	if(!-e $output or (-e $output and !-d $output)){
 	    system "mkdir $output";
 	}
@@ -1129,6 +1166,8 @@ elsif($input_dir){
         if(!-e $all_results_dir){
 	    system "mkdir $all_results_dir";
 	}
+
+	# Print the execution parameters in logfile
         open(my $fl, ">$file_log") or die "ERROR: Could not create log file $file_log : $!\n";
         print $fl "Command line:\n$script_command\n\n";
 	print $fl "Parameters: \n\n";
@@ -1147,6 +1186,8 @@ elsif($input_dir){
 	print $fl "-sf size filter: $size_filter\n";
 	print $fl "-ed element_distance: $element_distance\n";
 	my %pls = ();
+
+	# Check if a file containing the genome description is provided
 	if(defined $patric_list){
             print $fl "-pl patric list: $patric_list";
     	    if(!-e $patric_list){
@@ -1154,6 +1195,8 @@ elsif($input_dir){
     	    }
     	    else{
             	open(FILE, $patric_list);
+
+		# Store genome information in memory
         	while(<FILE>){
             	    chomp($_);
 		    if($_ =~ /contig_id/){
@@ -1203,6 +1246,8 @@ elsif($input_dir){
 	my %markers;
 	my $str_report = "";
 	my %general_markers = ();
+	
+	# Perform similarity searches for each provided profile HMM
 	for my $dir (@dirs){	 
     	    if($dir eq "." or $dir eq ".."){}
             else{
@@ -1228,16 +1273,18 @@ elsif($input_dir){
 			print LOG "\nFile $file not found!\n\n";
 			next;
 		    }
-		    my $type = verifiesFastaFile($file); # Verifies fasta file content.
-            	    if($type == 1){ #DNA fasta file
+		    my $type = verifiesFastaFile($file); # Check the FASTA file content
+            	    if($type == 1){ # DNA FASTA file
                      	print LOG "Type: Nucleotide Fasta\n";
 			my $aux_dir = $input_dir."/".$dir;
 			my $aux_name = $input_dir."/".$dir."/".$dir;
 			my $msg;
+			
+			# Run transeq program
                 	($transeq_name, $msg) = runTranseq($aux_name, $file, $aux_dir);			
 			print LOG $msg;
                     }
-            	    else{# Protein fasta file
+            	    else{# Protein FASTA file
                		 print LOG "Type: Protein Fasta\n";
                 	$transeq_name = $file;
             	    }
@@ -1286,14 +1333,20 @@ elsif($input_dir){
             		    system "mkdir $aux_dir_hmm";
 			}
 			my $msg;
+			
+			# Check if a cutoff score must be used in similarity searches
             		($resp, $msg) = verifyScoreEvalue($hmm, $aux_dir_hmm);
 			print LOG $msg;
 			my $aux = $out_dir."/".$prefix_dir."/".$dir; 
+
+			# Run hmmsearch program
             		($hmmsearch_tabular_file,$msg) = runHmmsearch($aux, $transeq_name, $resp, $hmm, $aux_dir_hmm);
 			print LOG $msg;
 			if($hmmsearch_tabular_file eq "-1"){
 			    next;
 			}
+
+			# Save similarity searches results in a file
 			print "Analysing hmmsearch results...\n";
 			my $table_1 = "$aux_dir_hmm/table1.csv";
 			my $str_table1 = analyseHmmsearchResults($hmmsearch_tabular_file, $resp);
@@ -1315,6 +1368,9 @@ elsif($input_dir){
 		    my %models = %{selectModels(\@dirs, $abs)};
 		    my %content = ();
         	    my %contigs = ();
+
+		    # Analysis of the similarity searches results found by all profile HMMs
+
         	    foreach my $key (sort keys %models){
             		my %hash = %{$models{$key}};
             		foreach my $key2 (sort keys %hash){
@@ -1322,6 +1378,10 @@ elsif($input_dir){
                 	    push @{$contigs{$key2}}, $key;
             		}	
         	    }
+		
+		# Check if the results found for each input sequence meet the criteria chosen in
+	    # the user-defined parameters 
+
 		    foreach my $key (sort keys %contigs){
             		my @coord = ();
             		my $amount = scalar(@{$contigs{$key}});
@@ -1344,6 +1404,8 @@ elsif($input_dir){
 			    my $seq = $genomes{$key};
 			    my %real_orf;
 			    %markers = ();
+			
+			    # Map the genes found in the original sequence to obtain their coordinates
 			    for (my $i = 0; $i < scalar(@contend_marker); ++$i){			
                     		my @aux_marker = split("_", $contigs{$key}[$i]);
                    		my $marker = $aux_marker[0];
@@ -1394,6 +1456,10 @@ elsif($input_dir){
                 	    }
 			    my @aux_markers = keys %markers;		    
                             my $num = scalar (@aux_markers);
+
+		# If the number of genes is lower than the minimum number defined by the user, the
+		# results are stored in a specific directory
+		
                             if($num < $minimum_amount){
 				if(-e $temp){
                                      system "rm $temp";
@@ -1477,6 +1543,10 @@ elsif($input_dir){
 			    }
 			    my $index = 1;
 			    my $pp = scalar(@possible_proteins);
+   
+			    # Check if the gene order and orientation meet the criteria defined in the 
+		    	# parameters
+		    	
 			    for(my $i = 0; $i < scalar(@possible_proteins) - 1; ++$i){
 				my @aux = split("\t", $possible_proteins[$i]);
 				my @aux2 = split("\t", $possible_proteins[$i+1]);
@@ -1578,7 +1648,9 @@ elsif($input_dir){
 				system "rm -rf $dir_final";
 			    }
 			}
-			else{
+			else{ # The minimum number of genes was not found in the sequence. The results
+				  # will be stored in a specific directory
+				  
 			    my @contend_marker = @{$content{$key}};
                     	    my $markers_str = "";
                     	    for (my $i = 0; $i < scalar(@contend_marker); ++$i){
@@ -1662,6 +1734,9 @@ elsif($input_dir){
 		}
 	    } 
 	}
+
+	# Generate the final files containing the positive sequences
+	
 	my $lenght = keys %markers;
         my $count = 1;
         my $str_aux = "";
@@ -1831,9 +1906,12 @@ if(-e $output and -e $log){
 }
 exit;
 
-################################################################
-### Sobroutines
-################################################################
+####################################################################
+###                        Sobroutines                           ###
+####################################################################
+
+# This routine checks if a directory with the given output name already 
+# exists. If so, a numeric suffix is added to the name.
 
 sub output_dir_name {
     my $output_dir_name = shift;
@@ -1855,6 +1933,8 @@ sub output_dir_name {
     print STDERR "\nOutput directory already exists, saving results to $output_dir_name instead.\n\n" if $flag;
     return ($output_dir_name);
 }
+
+# This routine identifies if the FASTA file contains nucleotide or protein sequences
 
 sub verifiesFastaFile{
     my $file = shift;
@@ -1913,23 +1993,14 @@ sub verifiesFastaFile{
 	    if ((index($_, 'M') != -1) or (index($_, 'm') != -1)) {
             	++$count;
             }
-=pod
-	    if($count > 0){
-	    	$type = 2;
-	    	last;
-	    }
-	    else{
-		++$num_lines;
-		if($num_lines > 5){
-		    last;
-		}
-	    }
-=cut
         }
     }    
     close($vf);
     return $type;
 }
+
+# This routine checks if the user-specified tabular input file is a hmmsearch tabular
+# output file.
 
 sub verificaArquivoTabular{
     my $file = shift;
@@ -1948,6 +2019,7 @@ sub verificaArquivoTabular{
     return 0;
 }
 
+# This routine runs transeq program.
 sub runTranseq{
     my $name = shift;
     my $file = shift;
@@ -1994,6 +2066,8 @@ sub runTranseq{
     return ($transeq, $msg);
 }
 
+# This routine runs hmmsearch program.
+
 sub runHmmsearch{
     my $name = shift;
     my $transeq = shift;
@@ -2031,6 +2105,8 @@ sub runHmmsearch{
     }
     return ($file1, $msg);
 }
+
+# This routine generates FASTA files from the hmmsearch results
 
 sub generateFastaFileByHmmsearch{
     my $file = shift;
@@ -2093,6 +2169,8 @@ sub generateFastaFileByHmmsearch{
     close(FILE);
 }
 
+# This routine generates FASTA files from the hmmsearch results (discarded results).
+
 sub generateFastaFileByHmmsearchDiscarded{
     my $file = shift;
     my $hmm_name = shift;
@@ -2134,6 +2212,8 @@ sub generateFastaFileByHmmsearchDiscarded{
     close(FILE);
 }
 
+# This routine runs tblastn program
+
 sub runBlast{
     my $query = shift;
     my $subject = shift;    
@@ -2142,6 +2222,8 @@ sub runBlast{
     system "$command";     
 }
 
+# This routine runs blastn program
+
 sub runBlastn{
     my $query = shift;
     my $subject = shift;
@@ -2149,6 +2231,8 @@ sub runBlastn{
     my $command = "blastn -query $query -subject $subject -outfmt '6 qseqid qlen qstart qend sseqid sstart send sframe score' -out $output_file >> /dev/null";
     system "$command";
 }
+
+# This routine removes redundant genes found by the similarity searches
 
 sub removeEqualsCoordinates{
     my $aux_vector = shift;
@@ -2179,6 +2263,8 @@ sub removeEqualsCoordinates{
     return (\@return);
 }
 
+# This routine sorts the genes found according to their coordinates
+
 sub sortCoordinates{
     my $aux_vector = shift;
     my @vector = @{$aux_vector};
@@ -2205,6 +2291,8 @@ sub sortCoordinates{
     return \@vector;
 }
 
+# This routine sorts the hmmsearch results by their scores
+
 sub sortByScoreMax{
     my $aux_vector = shift;
     my @vector = @{$aux_vector};
@@ -2230,6 +2318,8 @@ sub sortByScoreMax{
     return \@vector;
 }
 
+# This routine checks if the provided profiles HMMs contain the CUTOFF SCORE tag
+
 sub verifyCutoff{
     my $hmm = shift;
     my $value = `grep SCORE $hmm`;
@@ -2243,6 +2333,8 @@ sub verifyCutoff{
         return undef;
     }
 }
+
+# This routine checks if a score or e-value cutoff value was provided by the user
 
 sub verifyScoreEvalue{
     my $hmm = shift;
@@ -2325,6 +2417,8 @@ sub verifyScoreEvalue{
         return (0, $msg);
     }
 }
+
+# This routine checks whether the synteny of the genes meet the user-defined criteria 
 
 sub verifySynteny{
     my $aux_order = shift;
@@ -2461,6 +2555,8 @@ sub verifySynteny{
     }
 }
 
+# This routine checks the gene orientation
+
 sub verifyGenesDirection{
     my $g1 = shift;
     my $g2 = shift;
@@ -2519,6 +2615,8 @@ sub verifyGenesDirection{
     }
 }
 
+# This routine checks whether the synteny of the genes meet the user-defined criteria for 
+# a circular topology 
 
 sub verifyCircularSynteny{
     my $aux_order = shift;
@@ -2620,6 +2718,9 @@ sub verifyCircularSynteny{
     return 3;  
 }
 
+# This routine checks if the gene order and orientation meet the user-defined criteria for
+# a circular topology (without considering the intergenic distance)
+
 sub verifyCircularOrder{
     my $aux_order = shift;
     my $aux_genes = shift;
@@ -2717,6 +2818,7 @@ sub verifyCircularOrder{
     return 1;
 }
 
+# This routine analyzes hmmsearch results
 
 sub analyseHmmsearchResults{
     my $file = shift;
@@ -2776,6 +2878,8 @@ sub analyseHmmsearchResults{
     return $str;
 }
 
+# This routine selects the profile HMMs that showed the best results in similarity searches
+
 sub selectModels{
     my $aux = shift;
     my $abs = shift;
@@ -2822,6 +2926,8 @@ sub selectModels{
     return \%mod;
 }
 
+# This routine returns the coordinates of the similarity search results
+
 sub extractCoordinates{
     my $file = shift;
     my $key = shift;
@@ -2855,6 +2961,9 @@ sub extractCoordinates{
     close(FL);
     return \@vetor;
 }
+
+# This routine returns the gene coordinates according to blast similarity searches against
+# the genome sequence
 
 sub extractCoordinatesToFastaFile{
     my $file = shift;
@@ -2900,6 +3009,8 @@ sub extractCoordinatesToFastaFile{
     close(FILE);
     return $string_coord;
 }
+
+# This routine checks the intergenic distance, gene order and orientation
 
 sub verifyCoordinates{
     my $aux = shift;
@@ -2980,6 +3091,8 @@ sub verifyCoordinates{
     return 0;
 }
 
+# This routine checks the intergenic distance
+
 sub verifyCoordinatesWithoutSynteny{
     my $aux = shift;
     my @coordinates = @{$aux};
@@ -2997,6 +3110,9 @@ sub verifyCoordinatesWithoutSynteny{
     }
     return 0;
 }
+
+# This routine checks the gene order 
+
 sub verifyOrder{
     my $aux = shift;
     my @coordinates = @{$aux};
@@ -3059,6 +3175,8 @@ sub verifyOrder{
     }
     return 0;
 }
+
+# This routine checks the synteny of the genes without considering the intergenic distance
 
 sub verifySyntenyWithoutDistance{
     my $aux_order = shift;
@@ -3145,6 +3263,8 @@ sub verifySyntenyWithoutDistance{
 
 }
 
+# This routine generates a protein sequence FASTA file for discarded results 
+
 sub generateProteinFasta2{
     my $aux = shift;
     my $sequence = shift;
@@ -3202,6 +3322,8 @@ sub generateProteinFasta2{
 	}
     }
 }
+
+# This routine generates a protein sequence FASTA file for positive results 
 
 sub generateProteinFasta{
     my $aux = shift;
@@ -3422,6 +3544,8 @@ sub generateProteinFasta{
         system "mv $aux_file $protein_file";    
     }
 }
+
+# This routine generates FASTA sequence files for discarded sequences
 
 sub generateFastas{
     my $aux = shift;
@@ -4630,6 +4754,8 @@ sub generateFastas{
     return ($str, $resp, $id);
 }
 
+# This routine returns the CDS coordinates in the genome
+
 sub extractCoordinatesFromFasta{
     my $dir = shift;
     my $key = shift;
@@ -4660,6 +4786,7 @@ sub extractCoordinatesFromFasta{
     return undef;   
 }
 
+# This routine finds the ORF coordinates of a similarity search result.
 sub findORF{
     my $start = shift;
     my $end = shift;
@@ -4830,6 +4957,8 @@ sub findORF{
     return "$start_final\t$end_final\t$frame";
 }
 
+# This routine analyzes a group of genes and defines if they belong to the same element
+
 sub analiseGroupOfGenes{
     my $aux = shift;
     my $discarded = shift;
@@ -4870,6 +4999,8 @@ sub analiseGroupOfGenes{
     return ($resp, $str_report, $index_return);
 }
 
+# This routine generates a string containing a list of all genes found in a sequence
+
 sub generateStringMarkers{
     my $aux = shift;
     my @coord = @{$aux};
@@ -4889,6 +5020,8 @@ sub generateStringMarkers{
     }
     return $markers_str;
 }
+
+# This routine verifies the type of input file
 
 sub verify_file_type{ # 1 - fasta file; 2 - fastq file; 3 - tabular file
     my $file = shift;
@@ -4916,6 +5049,8 @@ sub verify_file_type{ # 1 - fasta file; 2 - fastq file; 3 - tabular file
     close(FILE);
     return 3;
 }
+
+# This routine discards redundant genes
 
 sub discard_redundant_genes{
     my $aux = shift;
