@@ -91,7 +91,7 @@ Follow the instructions in the e-Finder manual file to learn how to use e-Finder
 ## Reference
 If you use this program for your publication, please cite:
 
-Oliveira, L.S. and Gruber, A. (2021) Rational design of profile HMMs for viral classification and discovery. In Nakaya, H. (Ed.), Bioinformatics. Exon Publications, Brisbane, Australia, pp. 151-170.
+Oliveira, L.S. and Gruber, A. (2021) <a href="https://doi.org/10.36255/exonpublications.bioinformatics.2021.ch9">Rational design of profile HMMs for viral classification and discovery</a>. In Nakaya, H. (Ed.), Bioinformatics. Exon Publications, Brisbane, Australia, pp. 151-170.
 
 ## Contact
 To report bugs, to ask for help and to give any feedback, please contact Arthur Gruber (argruber@usp.br) or Liliane S. Oliveira (liliane.sntn@gmail.com).
